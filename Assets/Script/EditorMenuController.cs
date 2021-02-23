@@ -38,7 +38,7 @@ public class EditorMenuController : MonoBehaviour
 
 
 
-    private void Awake ()
+    private void Start ()
     {
         // Check for duplicate instances
         if (Instance != null)
@@ -60,29 +60,29 @@ public class EditorMenuController : MonoBehaviour
         // Text panels
         Text sizeText = textPanelSize.Find ("Text").GetComponent<Text> ();
         Text weightText = textPanelWeight.Find ("Text").GetComponent<Text> ();
-        size = new TextPanelController (textPanelSize.transform, sizeText, () => { sizeText.text = ((int)TerrainController.CursorSize).ToString (); });
-        weight = new TextPanelController (textPanelWeight.transform, weightText, () => { weightText.text = ((int)TerrainController.CursorWeight).ToString (); });
+        size = new TextPanelController (textPanelSize.transform, sizeText, () => { sizeText.text = ((int)UserEditor.CursorSize).ToString (); });
+        weight = new TextPanelController (textPanelWeight.transform, weightText, () => { weightText.text = ((int)UserEditor.CursorWeight).ToString (); });
 
         // Static buttons
         undo = new ButtonController (buttonUndo.transform, buttonUndo, "Undo last move", () => { TerrainController.Undo (); });
         redo = new ButtonController (buttonRedo.transform, buttonRedo, "Redo last undo'd move", () => { TerrainController.Redo (); });
         reset = new ButtonController (buttonReset.transform, buttonReset, "Reset terrain to flat plane", () => { TerrainController.GenerateDefault (); TerrainController.UpdateMesh (); });
-        sizeUp = new ButtonController (buttonSizeUp.transform, buttonSizeUp, "Increase the brush's range", () => { TerrainController.ChangeSize (1); size.OnValue (); sizeScroll.OnValue (); });
-        sizeDown = new ButtonController (buttonSizeDown.transform, buttonSizeDown, "Decrease the brush's range", () => { TerrainController.ChangeSize (-1); size.OnValue (); sizeScroll.OnValue (); });
-        weightUp = new ButtonController (buttonWeightUp.transform, buttonWeightUp, "Increase the brush's strength", () => { TerrainController.ChangeWeight (1); weight.OnValue (); weightScroll.OnValue (); });
-        weightDown = new ButtonController (buttonWeightDown.transform, buttonWeightDown, "Decrease the brush's strength", () => { TerrainController.ChangeWeight (-1); weight.OnValue (); weightScroll.OnValue (); });
+        sizeUp = new ButtonController (buttonSizeUp.transform, buttonSizeUp, "Increase the brush's range", () => { UserEditor.ChangeSize (1); size.OnValue (); sizeScroll.OnValue (); });
+        sizeDown = new ButtonController (buttonSizeDown.transform, buttonSizeDown, "Decrease the brush's range", () => { UserEditor.ChangeSize (-1); size.OnValue (); sizeScroll.OnValue (); });
+        weightUp = new ButtonController (buttonWeightUp.transform, buttonWeightUp, "Increase the brush's strength", () => { UserEditor.ChangeWeight (1); weight.OnValue (); weightScroll.OnValue (); });
+        weightDown = new ButtonController (buttonWeightDown.transform, buttonWeightDown, "Decrease the brush's strength", () => { UserEditor.ChangeWeight (-1); weight.OnValue (); weightScroll.OnValue (); });
 
         // Scrollbars
         sizeScroll = new ScrollbarController (
             scrollbarSize.transform, scrollbarSize, "Change the brush's range",
-            (value) => { TerrainController.SetSize (sizeScroll.Remap (value)); size.OnValue (); },
-            () => { sizeScroll.scrollbar.value = sizeScroll.InverseRemap (TerrainController.CursorSize); },
+            (value) => { UserEditor.SetSize (sizeScroll.Remap (value)); size.OnValue (); },
+            () => { sizeScroll.scrollbar.value = sizeScroll.InverseRemap (UserEditor.CursorSize); },
             new Vector4 (0, 1, 1, 50)
         );
         weightScroll = new ScrollbarController (
             scrollbarWeight.transform, scrollbarWeight, "Change the brush's strength",
-            (value) => { TerrainController.SetWeight (weightScroll.Remap (value)); weight.OnValue (); },
-            () => { weightScroll.scrollbar.value = weightScroll.InverseRemap (TerrainController.CursorWeight); },
+            (value) => { UserEditor.SetWeight (weightScroll.Remap (value)); weight.OnValue (); },
+            () => { weightScroll.scrollbar.value = weightScroll.InverseRemap (UserEditor.CursorWeight); },
             new Vector4 (0, 1, 1, 50)
         );
 
@@ -118,7 +118,7 @@ public class EditorMenuController : MonoBehaviour
             button.Find ("Text").GetComponent<Text> ().text = brush.Name;
 
             // Create the button controller and define its functionality
-            brushButtons[i] = new ButtonController (button, button.GetComponent<Button> (), brush.Tooltip, () => { TerrainController.TerrainBrush = brush; });
+            brushButtons[i] = new ButtonController (button, button.GetComponent<Button> (), brush.Tooltip, () => { UserEditor.TerrainBrush = brush; });
         }
     }
 

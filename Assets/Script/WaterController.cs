@@ -12,6 +12,9 @@ public class WaterController : MonoBehaviour
     public static int Width { private set; get; }
     public static int Height { private set; get; }
 
+    // Material
+    public static Material Material { private set; get; }
+
     // Mesh
     public static Mesh Mesh { private set; get; }
     private static Vector3[] Vertices { set; get; }
@@ -71,10 +74,23 @@ public class WaterController : MonoBehaviour
 
 
 
+    // Update water material with cursor parameters
+    public static void UpdateCursorPosition (Vector2 cursorPosition, float cursorSize, float cursorWeight)
+    {
+        Material.SetVector ("_CursorPosition", cursorPosition);
+        Material.SetFloat ("_CursorSize", cursorSize);
+        Material.SetFloat ("_CursorWeight", cursorWeight);
+    }
+
+
+
     /* INSTANCE */
 
     // Size
     [SerializeField] private int width = 20, height = 20;
+
+    // Material
+    [SerializeField] private Material material;
 
 
 
@@ -89,6 +105,9 @@ public class WaterController : MonoBehaviour
         // Size
         Width = width;
         Height = height;
+
+        // Material
+        Material = material;
     }
 
     private void Start ()

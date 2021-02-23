@@ -18,7 +18,7 @@ public class Average : TerrainBrush
         {
             for (int y = yMin; y < yMax; y++)
             {
-                if (Vector3.Distance (new Vector3 (x, 0, y), CameraController.Cursor) <= TerrainController.CursorSize)
+                if (Vector3.Distance (new Vector3 (x, 0, y), CameraController.Cursor) <= UserEditor.CursorSize)
                 {
                     average += TerrainController.GetElevation (x, y);
                     count++;
@@ -33,9 +33,14 @@ public class Average : TerrainBrush
         {
             for (int y = yMin; y < yMax; y++)
             {
-                if (Vector3.Distance (new Vector3 (x, 0, y), CameraController.Cursor) <= TerrainController.CursorSize)
+                float distance = Vector3.Distance (new Vector3 (x, 0, y), CameraController.Cursor);
+                if (distance <= UserEditor.CursorSize)
                 {
-                    TerrainController.SetElevation (x, y, Mathf.Lerp (TerrainController.GetElevation (x, y), average, 10 * Time.deltaTime * MathfExt.Remap (TerrainController.CursorWeight, 0, 50, 0, 1)));
+                    float normalisedDistance = 1 - distance / UserEditor.CursorSize;
+                    float t = 10 * Time.deltaTime * normalisedDistance * MathfExt.Remap (UserEditor.CursorWeight, 0, 50, 0, 1);
+                    float newElevation = Mathf.Lerp (TerrainController.GetElevation (x, y), average, t);
+
+                    TerrainController.SetElevation (x, y, newElevation);
                 }
             }
         }

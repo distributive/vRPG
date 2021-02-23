@@ -14,19 +14,17 @@ public class TerrainController : MonoBehaviour
     public static int Width { private set; get; }
     public static int Height { private set; get; }
 
+    // Material
+    public static Material Material { private set; get; }
+
+    // Vertical limits
+    public static float MaxElevation { private set; get; }
+    public static float MinElevation { private set; get; }
+
     // Mesh
     public static Mesh Mesh { private set; get; }
     private static Vector3[] Vertices { set; get; }
     private static int[] Triangles { set; get; }
-
-    // User
-    public static float MaxElevation { private set; get; }
-    public static float MinElevation { private set; get; }
-    public static float CursorSize { private set; get; }
-    public static float CursorWeight { private set; get; }
-
-    // Terrain brushes
-    public static TerrainBrush TerrainBrush { get; set; }
 
 
 
@@ -39,18 +37,18 @@ public class TerrainController : MonoBehaviour
     {
         int index = x + y * (Width + 1);
         Vertices[index] = new Vector3 (Vertices[index].x, Mathf.Clamp (elevation, MinElevation, MaxElevation), Vertices[index].z);
-
-        hasChanged = true;
+        
+        HasChanged = true;
     }
     public static void OffsetElevation (int x, int y, float offset)
     {
         if (offset == 0)
             return;
-
+        
         int index = x + y * (Width + 1);
         Vertices[index] = new Vector3 (Vertices[index].x, Mathf.Clamp (Vertices[index].y + offset, MinElevation, MaxElevation), Vertices[index].z);
-
-        hasChanged = true;
+        
+        HasChanged = true;
     }
 
     // Returns a default for invalid inputs
@@ -119,35 +117,16 @@ public class TerrainController : MonoBehaviour
 
 
 
-    // Update brush values
-    public static void SetSize (float value)
-    {
-        CursorSize = value;
-    }
-    public static void SetWeight (float value)
-    {
-        CursorWeight = value;
-    }
-    public static void ChangeSize (float value)
-    {
-        CursorSize += value;
-    }
-    public static void ChangeWeight (float value)
-    {
-        CursorWeight += value;
-    }
-
-
-
     // History
     private static LinkedStateList<TerrainData> editHistory;
-    private static bool hasChanged; // Is set to false whenever the terrain is unchanged from the current saved state
+    public static bool ActionOccuring { private set; get; } // Is set to true while a saveable action is currently being performed
+    public static bool HasChanged { private set; get; } // Is set to false whenever the terrain is unchanged from the current saved state
 
     public static void SaveState ()
     {
         editHistory.Add (new TerrainData (Width, Height, Vertices, Triangles));
 
-        hasChanged = false;
+        HasChanged = false;
     }
     public static void Undo ()
     {
@@ -157,7 +136,7 @@ public class TerrainController : MonoBehaviour
         LoadTerrainData (editHistory.EnterPrevState ());
         UpdateMesh ();
 
-        hasChanged = false;
+        HasChanged = false;
     }
     public static void Redo ()
     {
@@ -167,7 +146,7 @@ public class TerrainController : MonoBehaviour
         LoadTerrainData (editHistory.EnterNextState ());
         UpdateMesh ();
 
-        hasChanged = false;
+        HasChanged = false;
     }
 
     private static void LoadTerrainData (TerrainData data)
@@ -191,7 +170,26 @@ public class TerrainController : MonoBehaviour
         System.Array.Copy (data.triangles, Triangles, Triangles.Length);
     }
 
-    private static void SaveToFile (string fileName)
+
+
+    // Action atomisation
+    public static void BeginAction ()
+    {
+        ActionOccuring = true;
+    }
+    public static void EndAction ()
+    {
+        if (HasChanged)
+            SaveState ();
+
+        ActionOccuring = false;
+        HasChanged = false;
+    }
+
+
+
+    // I/O
+    public static void SaveToFile (string fileName)
     {
         // Format fileName correctly
         if (fileName[0] != '/')
@@ -210,7 +208,7 @@ public class TerrainController : MonoBehaviour
         file.Close ();
     }
 
-    private static void LoadFromFile (string fileName)
+    public static void LoadFromFile (string fileName)
     {
         // Format fileName correctly
         if (fileName[0] != '/')
@@ -248,20 +246,26 @@ public class TerrainController : MonoBehaviour
 
 
 
+    // Update terrain material with cursor parameters
+    public static void UpdateCursorPosition (Vector2 cursorPosition, float cursorSize, float cursorWeight)
+    {
+        Material.SetVector ("_CursorPosition", cursorPosition);
+        Material.SetFloat ("_CursorSize", cursorSize);
+        Material.SetFloat ("_CursorWeight", cursorWeight);
+    }
+
+
+
     /* INSTANCE */
 
     // Size
     [SerializeField] private int width = 20, height = 20;
 
-    // User
+    // Vertical limtis
     [SerializeField] private float maxElevation = 10, minElevation = -10;
-    [SerializeField] private float cursorRange = 5, cursorStrength = 0.1f;
 
     // Material
     [SerializeField] private Material material;
-
-    // Painting debounce
-    private bool isPainting;
 
 
 
@@ -277,11 +281,12 @@ public class TerrainController : MonoBehaviour
         Width = width;
         Height = height;
 
-        // User
+        // Vertical limits
         MaxElevation = maxElevation;
         MinElevation = minElevation;
-        CursorSize = cursorRange;
-        CursorWeight = cursorStrength;
+
+        // Material
+        Material = material;
 
         // Edit history
         editHistory = new LinkedStateList<TerrainData> ();
@@ -295,41 +300,6 @@ public class TerrainController : MonoBehaviour
 
         GenerateDefault ();
         UpdateMesh ();
-    }
-
-    private void Update ()
-    {
-        // Input
-        if (TerrainBrush != null && Input.GetMouseButton (0) && !CameraController.IsPointerOverUIObject ())
-        {
-            TerrainBrush.Draw (1);
-
-            UpdateMesh ();
-
-            isPainting = true;
-        }
-        else if (isPainting)
-        {
-            if (hasChanged)
-                SaveState ();
-
-            isPainting = false;
-        }
-
-        // Hotkeys
-        if (Input.GetKeyDown (KeyCode.K))
-        {
-            SaveToFile ("test");
-        }
-        else if (Input.GetKeyDown (KeyCode.L))
-        {
-            LoadFromFile ("test");
-        }
-
-        // Cursor
-        material.SetVector ("_CursorPosition", new Vector2 (CameraController.Cursor.x, CameraController.Cursor.z));
-        material.SetFloat ("_CursorSize", CursorSize);
-        material.SetFloat ("_CursorWeight", CursorWeight);
     }
 
 

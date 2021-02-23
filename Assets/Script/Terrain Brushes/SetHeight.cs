@@ -17,7 +17,7 @@ public class SetHeight : TerrainBrush
         {
             for (int y = yMin; y < yMax; y++)
             {
-                if (Vector3.Distance (new Vector3 (x, 0, y), CameraController.Cursor) <= TerrainController.CursorSize)
+                if (Vector3.Distance (new Vector3 (x, 0, y), CameraController.Cursor) <= UserEditor.CursorSize)
                 {
                     TerrainController.SetElevation (x, y, targetElevation);
                 }
